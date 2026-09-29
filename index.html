@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>CINÉ STUDIO — Turbo</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0a;--panel:#141414;--panel2:#1c1c1c;--border:#2a2a2a;
+  --ink:#f5f5f5;--ink-dim:#888;--ink-faint:#555;
+  --accent:#ff3b30;--accent2:#ff9500;--success:#30d158;--info:#0a84ff;
+  --turbo:#ffd60a;--radius:14px;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--ink);min-height:100vh;
+  padding:1rem 1rem 7rem;font-size:15px;line-height:1.5;
+  max-width:780px;margin:0 auto;
+}
+header{text-align:center;margin-bottom:1.2rem;padding-top:.5rem}
+h1{
+  font-size:1.6rem;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(135deg,#ff3b30,#ff9500);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:.2rem;
+}
+.subtitle{font-size:.72rem;color:var(--ink-dim);letter-spacing:.15em;text-transform:uppercase}
+
+.toast{
+  position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-120px);
+  background:#1c1c1c;color:#fff;padding:.9rem 1.3rem;border-radius:12px;
+  font-size:.85rem;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.6);
+  z-index:1000;opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);
+  max-width:90vw;text-align:center;display:flex;align-items:center;gap:.5rem;
+  border:1px solid var(--border);
+}
+.toast.visible{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.success{border-color:var(--success)}
+.toast.error{border-color:var(--accent)}
+.toast.warn{border-color:var(--accent2)}
+
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem;margin-bottom:.8rem;
+}
+.card-title{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--ink-dim);font-weight:700;margin-bottom:.7rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.card-title .num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;background:var(--accent);
+  color:#fff;font-size:.65rem;
+}
+.card-title .badge{
+  margin-left:auto;padding:.15rem .5rem;border-radius:10px;
+  background:var(--accent2);color:#000;font-size:.6rem;font-weight:800;
+  letter-spacing:.05em;
+}
+
+input[type="password"],input[type="text"],textarea,select{
+  width:100%;padding:.85rem 1rem;border-radius:10px;
+  border:1px solid var(--border);background:var(--panel2);
+  color:var(--ink);font-family:inherit;font-size:.9rem;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+textarea{min-height:110px;resize:vertical;line-height:1.5}
+
+.btn{
+  width:100%;padding:1rem;border-radius:12px;border:none;
+  font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer;
+  transition:transform .1s,opacity .2s;
+}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{
+  background:linear-gradient(135deg,#ff3b30,#ff9500);
+  color:#fff;font-size:1.05rem;padding:1.15rem;margin-bottom:.8rem;
+  box-shadow:0 8px 24px rgba(255,59,48,.35);
+}
+.btn-secondary{background:var(--panel2);color:var(--ink);border:1px solid var(--border);margin-bottom:.5rem}
+.btn-danger{background:var(--panel2);color:var(--accent);border:1px solid var(--accent);margin-bottom:.5rem}
+.btn-stop{background:var(--panel);color:var(--accent);border:1px solid var(--accent);margin-bottom:.8rem;display:none}
+.btn-stop.visible{display:block}
+
+.status-line{
+  font-size:.75rem;padding:.6rem .85rem;border-radius:8px;
+  background:var(--panel2);color:var(--ink-dim);
+  display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;
+  transition:all .3s;
+}
+.status-line.ok{background:rgba(48,209,88,.12);color:var(--success);font-weight:600}
+.status-line .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex-shrink:0}
+.status-line.ok .dot{background:var(--success);box-shadow:0 0 8px var(--success)}
+.hint{font-size:.7rem;color:var(--ink-dim);margin-top:.4rem;line-height:1.4}
+.hint a{color:var(--info);text-decoration:none;font-weight:600}
+
+/* Genres */
+.genres{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem}
+.genre{
+  padding:1rem .8rem;border-radius:12px;border:2px solid var(--border);
+  background:var(--panel2);cursor:pointer;text-align:center;
+  transition:all .15s;
+}
+.genre:active{transform:scale(.97)}
+.genre.selected{border-color:var(--accent);background:rgba(255,59,48,.1)}
+.genre .emoji{font-size:1.8rem;display:block;margin-bottom:.3rem}
+.genre .name{font-size:.8rem;font-weight:700;line-height:1.2}
+.genre .desc{font-size:.65rem;color:var(--ink-dim);margin-top:.2rem;line-height:1.2}
+
+/* Durée */
+.durations{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.duration{
+  padding:.9rem .5rem;border-radius:10px;border:2px solid var(--border);
+  background:var(--panel2);cursor:pointer;text-align:center;transition:all .15s;
+}
+.duration:active{transform:scale(.97)}
+.duration.selected{border-color:var(--accent);background:rgba(255,59,48,.1)}
+.duration .time{font-size:1.2rem;font-weight:800}
+.duration .label{font-size:.65rem;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.08em}
+
+/* Modes */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.8rem}
+.mode{
+  padding:.8rem .6rem;border-radius:10px;border:2px solid var(--border);
+  background:var(--panel2);cursor:pointer;text-align:center;transition:all .15s;
+}
+.mode:active{transform:scale(.97)}
+.mode.selected{border-color:var(--accent);background:rgba(255,59,48,.1)}
+.mode .emoji{font-size:1.4rem;display:block}
+.mode .name{font-size:.72rem;font-weight:700;margin-top:.2rem}
+
+/* Upload */
+.upload{
+  border:2px dashed var(--border);border-radius:12px;
+  padding:1.5rem 1rem;text-align:center;cursor:pointer;
+  transition:all .2s;background:var(--panel2);
+}
+.upload:active{border-color:var(--accent);background:rgba(255,59,48,.05)}
+.upload input{display:none}
+.upload-icon{font-size:2.2rem;opacity:.6;margin-bottom:.4rem}
+.upload-text{font-size:.9rem;font-weight:600}
+.upload-hint{font-size:.72rem;color:var(--ink-dim);margin-top:.3rem}
+
+/* Images grid */
+.images-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+  gap:.5rem;margin-top:.7rem;
+}
+.image-card{
+  position:relative;border-radius:8px;overflow:hidden;
+  border:1px solid var(--border);background:#000;
+  aspect-ratio:9/16;
+}
+.image-card img{width:100%;height:100%;object-fit:cover;display:block}
+.image-card .remove{
+  position:absolute;top:4px;right:4px;
+  background:rgba(0,0,0,.8);color:#fff;border:none;
+  width:22px;height:22px;border-radius:50%;font-size:11px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.image-card .index{
+  position:absolute;bottom:4px;left:4px;
+  background:rgba(0,0,0,.75);color:#fff;
+  padding:2px 6px;border-radius:6px;font-size:.6rem;font-weight:700;
+}
+
+/* Turbo toggle */
+.turbo-toggle{
+  display:flex;align-items:center;gap:.7rem;
+  padding:.9rem 1rem;border-radius:12px;
+  background:var(--panel2);border:2px solid var(--border);
+  cursor:pointer;transition:all .2s;margin-bottom:.6rem;
+}
+.turbo-toggle:active{transform:scale(.98)}
+.turbo-toggle.on{
+  border-color:var(--turbo);
+  background:linear-gradient(135deg,rgba(255,214,10,.12),rgba(255,149,0,.12));
+}
+.turbo-toggle .turbo-icon{
+  font-size:1.6rem;filter:grayscale(1);transition:filter .2s;
+}
+.turbo-toggle.on .turbo-icon{filter:none;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.turbo-toggle .turbo-info{flex:1}
+.turbo-toggle .turbo-name{font-size:.9rem;font-weight:800;line-height:1.2}
+.turbo-toggle .turbo-desc{font-size:.7rem;color:var(--ink-dim);margin-top:.15rem}
+.turbo-toggle .turbo-switch{
+  width:44px;height:24px;border-radius:12px;background:var(--panel);
+  border:1px solid var(--border);position:relative;transition:all .2s;
+  flex-shrink:0;
+}
+.turbo-toggle .turbo-switch::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:18px;height:18px;border-radius:50%;background:var(--ink-faint);
+  transition:all .2s;
+}
+.turbo-toggle.on .turbo-switch{background:var(--turbo)}
+.turbo-toggle.on .turbo-switch::after{left:22px;background:#000}
+
+/* Stats live */
+.stats-box{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;
+  margin-top:.6rem;
+}
+.stat{
+  padding:.6rem .5rem;border-radius:8px;background:var(--panel2);
+  text-align:center;border:1px solid var(--border);
+}
+.stat .stat-val{
+  font-size:1rem;font-weight:800;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.stat .stat-label{
+  font-size:.6rem;color:var(--ink-dim);text-transform:uppercase;
+  letter-spacing:.06em;margin-top:.1rem;
+}
+.stat.good .stat-val{color:var(--success)}
+.stat.bad .stat-val{color:var(--accent)}
+.stat.turbo .stat-val{color:var(--turbo)}
+
+.presets{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem}
+.preset{
+  padding:.35rem .7rem;border-radius:16px;border:1px solid var(--border);
+  background:var(--panel2);font-size:.7rem;cursor:pointer;
+  transition:all .15s;
+}
+.preset:active{transform:scale(.95);border-color:var(--accent)}
+
+.batch-info{
+  font-size:.72rem;color:var(--ink-dim);
+  padding:.5rem .7rem;background:var(--panel2);border-radius:8px;
+  margin-top:.5rem;display:flex;justify-content:space-between;
+  flex-wrap:wrap;gap:.3rem;
+}
+
+/* Queue */
+.queue{margin-top:1rem;display:none}
+.queue.visible{display:block}
+.queue-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.7rem .9rem;background:var(--panel);border-radius:10px;
+  margin-bottom:.5rem;font-size:.8rem;border:1px solid var(--border);
+  flex-wrap:wrap;gap:.5rem;
+}
+.queue-header .prog{font-weight:800;font-size:.9rem}
+.queue-header .eta{color:var(--ink-dim);font-size:.72rem}
+.queue-item{
+  display:flex;align-items:center;gap:.7rem;padding:.65rem .9rem;
+  border-radius:8px;border:1px solid var(--border);background:var(--panel);
+  margin-bottom:.4rem;font-size:.8rem;transition:all .3s;
+}
+.queue-item.pending{opacity:.5}
+.queue-item.creating{border-color:var(--accent2)}
+.queue-item.processing{border-color:var(--info)}
+.queue-item.done{border-color:var(--success)}
+.queue-item.failed{border-color:var(--accent)}
+.queue-item .qi-icon{font-size:1rem;width:1.4rem;text-align:center;flex-shrink:0}
+.queue-item .qi-thumb{
+  width:32px;height:32px;border-radius:6px;object-fit:cover;
+  flex-shrink:0;border:1px solid var(--border);
+}
+.queue-item .qi-name{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-item .qi-status{font-size:.68rem;color:var(--ink-dim);text-align:right;flex-shrink:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-item.done .qi-status{color:var(--success);font-weight:700}
+.queue-item.failed .qi-status{color:var(--accent);font-weight:700}
+
+/* Galerie */
+.gallery{margin-top:1.2rem;display:none}
+.gallery.visible{display:block}
+.gallery-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:.7rem;
+}
+.gallery-item{
+  border-radius:12px;overflow:hidden;border:1px solid var(--border);
+  background:#000;animation:fade .4s ease;
+}
+.gallery-item video{width:100%;display:block;aspect-ratio:9/16;object-fit:cover}
+.gallery-item .cap{
+  padding:.4rem .6rem;background:var(--panel);
+  font-size:.7rem;color:var(--ink-dim);display:flex;
+  justify-content:space-between;align-items:center;
+}
+.gallery-item .cap a{color:var(--info);text-decoration:none;font-weight:700}
+
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.statusbar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#000;color:#fff;padding:.8rem 1rem;
+  font-size:.8rem;display:flex;align-items:center;gap:.6rem;
+  transform:translateY(100%);transition:transform .3s;z-index:100;
+  border-top:1px solid var(--border);
+}
+.statusbar.visible{transform:translateY(0)}
+.statusbar.turbo{border-top-color:var(--turbo);background:linear-gradient(90deg,#000,#1a1400)}
+.spinner{
+  width:14px;height:14px;border:2px solid rgba(255,255,255,.25);
+  border-top-color:#ff9500;border-radius:50%;
+  animation:spin .8s linear infinite;flex-shrink:0;
+}
+.statusbar.turbo .spinner{border-top-color:var(--turbo)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Résumé sauvegarde */
+.resume-banner{
+  background:linear-gradient(135deg,rgba(255,214,10,.15),rgba(255,59,48,.1));
+  border:1px solid var(--turbo);border-radius:12px;
+  padding:.8rem 1rem;margin-bottom:.8rem;display:none;
+}
+.resume-banner.visible{display:block;animation:fade .4s ease}
+.resume-banner .rb-title{
+  font-size:.85rem;font-weight:800;color:var(--turbo);
+  display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;
+}
+.resume-banner .rb-text{
+  font-size:.75rem;color:var(--ink);line-height:1.4;margin-bottom:.6rem;
+}
+.resume-banner .rb-actions{display:flex;gap:.5rem}
+.resume-banner .rb-actions button{
+  flex:1;padding:.55rem;border-radius:8px;border:none;
+  font-family:inherit;font-size:.75rem;font-weight:700;cursor:pointer;
+}
+.resume-banner .rb-resume{
+  background:var(--turbo);color:#000;
+}
+.resume-banner .rb-discard{
+  background:var(--panel2);color:var(--ink-dim);border:1px solid var(--border);
+}
+
+.hidden{display:none!important}
+#noSleep{position:fixed;top:0;left:0;width:1px;height:1px;opacity:.01;pointer-events:none;z-index:-1}
+canvas#nc{position:fixed;top:0;left:0;width:1px;height:1px;opacity:.01;pointer-events:none;z-index:-1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎬 CINÉ STUDIO</h1>
+  <p class="subtitle">Turbo Edition · Vidéos IA</p>
+</header>
+
+<!-- Bandeau de reprise -->
+<div class="resume-banner" id="resumeBanner">
+  <div class="rb-title">💾 Sauvegarde détectée</div>
+  <div class="rb-text" id="resumeText"></div>
+  <div class="rb-actions">
+    <button class="rb-resume" id="resumeBtn">▶ Reprendre</button>
+    <button class="rb-discard" id="discardBtn">🗑 Supprimer</button>
+  </div>
+</div>
+
+<!-- ÉTAPE 1 : Clé API -->
+<div class="card">
+  <div class="card-title"><span class="num">1</span> Clé API</div>
+  <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" spellcheck="false">
+  <button type="button" class="btn btn-secondary" id="saveKey" style="margin-top:.6rem">💾 Enregistrer la clé</button>
+  <div class="status-line" id="keyStatus">
+    <span class="dot"></span><span id="keyStatusText">Aucune clé enregistrée</span>
+  </div>
+  <div class="hint">
+    Clé gratuite sur <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a> → Settings → API Keys
+  </div>
+</div>
+
+<!-- ÉTAPE 2 : Univers -->
+<div class="card">
+  <div class="card-title"><span class="num">2</span> Univers cinématographique</div>
+  <div class="genres" id="genres"></div>
+</div>
+
+<!-- ÉTAPE 3 : Durée -->
+<div class="card">
+  <div class="card-title"><span class="num">3</span> Durée de chaque vidéo</div>
+  <div class="durations" id="durations"></div>
+</div>
+
+<!-- ÉTAPE 4 : Source -->
+<div class="card">
+  <div class="card-title"><span class="num">4</span> Source <span class="badge" id="batchBadge">BATCH</span></div>
+  <div class="modes" id="modes">
+    <div class="mode selected" data-mode="text">
+      <span class="emoji">✍️</span>
+      <div class="name">Texte seul</div>
+    </div>
+    <div class="mode" data-mode="image">
+      <span class="emoji">🖼️</span>
+      <div class="name">Images → Vidéos</div>
+    </div>
+  </div>
+
+  <!-- Zone images -->
+  <div id="imageZone" class="hidden">
+    <div class="upload" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*" multiple>
+      <div class="upload-icon">＋</div>
+      <div class="upload-text">Ajouter plusieurs images</div>
+      <div class="upload-hint">Chaque image deviendra une vidéo (file d'attente automatique)</div>
+    </div>
+    <div class="images-grid" id="imagesGrid"></div>
+    <div class="batch-info" id="batchInfo" style="display:none">
+      <span>📦 <strong id="imgCount">0</strong> image(s)</span>
+      <span id="estimatedTime">≈ —</span>
+    </div>
+  </div>
+
+  <!-- Prompt -->
+  <textarea id="prompt" placeholder="Décrivez la scène (s'applique à toutes les images en batch)..."></textarea>
+  <div class="presets" id="presets"></div>
+</div>
+
+<!-- ÉTAPE 5 : Turbo -->
+<div class="card">
+  <div class="card-title"><span class="num">5</span> Mode Turbo <span class="badge" style="background:var(--turbo);color:#000">INTELLIGENT</span></div>
+
+  <div class="turbo-toggle on" id="turboToggle">
+    <span class="turbo-icon">⚡</span>
+    <div class="turbo-info">
+      <div class="turbo-name">Délai adaptatif intelligent</div>
+      <div class="turbo-desc" id="turboDesc">Ajuste automatiquement le délai entre chaque vidéo (62s → 90s)</div>
+    </div>
+    <div class="turbo-switch"></div>
+  </div>
+
+  <div class="stats-box">
+    <div class="stat good">
+      <div class="stat-val" id="statSpeed">—</div>
+      <div class="stat-label">Délai actuel</div>
+    </div>
+    <div class="stat turbo">
+      <div class="stat-val" id="statRetries">0</div>
+      <div class="stat-label">Ajustements</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="statSuccess">0%</div>
+      <div class="stat-label">Taux succès</div>
+    </div>
+  </div>
+
+  <div class="hint" style="margin-top:.7rem">
+    💡 <strong>Turbo ON :</strong> l'app démarre à 62s et ajuste en direct. Si l'API répond 429, elle ralentit.
+    Si tout va bien, elle accélère progressivement. <strong>Turbo OFF :</strong> délai fixe de 75s (safe).
+  </div>
+</div>
+
+<!-- Boutons -->
+<button type="button" class="btn btn-primary" id="generateBtn" disabled>🎬 Générer les vidéos</button>
+<button type="button" class="btn btn-stop" id="stopBtn">⏹ Arrêter le batch</button>
+<button type="button" class="btn btn-danger hidden" id="clearAllBtn">🗑 Tout effacer (sauvegarde + galerie)</button>
+
+<!-- Queue -->
+<div class="queue" id="queue">
+  <div class="queue-header">
+    <span class="prog" id="queueProgress">0/0</span>
+    <span class="eta" id="queueEta"></span>
+  </div>
+  <div id="queueList"></div>
+</div>
+
+<!-- Galerie -->
+<div class="gallery" id="gallery">
+  <div class="card-title" style="margin-bottom:.7rem">🎞️ Vidéos générées <span class="badge" id="galCount">0</span></div>
+  <div class="gallery-grid" id="galleryGrid"></div>
+</div>
+
+<!-- Status bar -->
+<div class="statusbar" id="statusBar">
+  <div class="spinner"></div>
+  <span id="statusText">Préparation…</span>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✓</span>
+  <span id="toastText">Message</span>
+</div>
+
+<canvas id="nc" width="2" height="2"></canvas>
+<video id="noSleep" playsinline muted loop></video>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL = 'agnes-video-v2.0';
+const FPS = 24;
+const KEY_STORAGE = 'cinestudio_turbo_key';
+const SAVE_STORAGE = 'cinestudio_turbo_save';
+const TURBO_PREF = 'cinestudio_turbo_enabled';
+const MAX_IMAGE_SIZE = 12 * 1024 * 1024;
+const THUMB_WIDTH = 240;
+
+// Paramètres Turbo
+const TURBO = {
+  start: 62000,
+  min: 62000,
+  max: 120000,
+  safeThreshold: 75000,
+  decreaseStep: 4000,
+  increaseStep: 8000,
+  decreaseAfter: 3       // 3 succès consécutifs → accélération
+};
+const FIXED_DELAY = 75000;
+
+// Durées
+const DURATIONS = [
+  { id: 6,  frames: 145, label: '6s',  desc: 'Rapide' },
+  { id: 10, frames{
+  "name": "Ciné Studio Turbo — Vidéos IA",
+  "short_name": "Ciné Turbo",
+  "description": "Générateur batch avec délai adaptatif et sauvegarde automatique",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMGEwYTBhIi8+PHRleHQgeD0iOTYiIHk9IjEyNSIgZm9udC1zaXplPSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+OrDwvdGV4dD48L3N2Zz4=",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
